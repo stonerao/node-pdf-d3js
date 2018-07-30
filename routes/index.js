@@ -5,6 +5,7 @@ var jsdom = require('jsdom');
 const {
   JSDOM
 } = jsdom;
+const STYLE = require("./style.js")
 var {
   index
 } = require("../path.js")
@@ -20,10 +21,10 @@ function renderPdf(name) {
     ph.createPage().then(function (page) {
       //打开需要读取页面
       page.open("http://localhost:3000/chart").then(function (status) {
-        page.property('viewportSize', {
+        /* page.property('viewportSize', {
           width: 595,
           height: 500
-        });
+        }); */
         //设置页面为A4大小
         page.property('paperSize', {
           format: 'A4',
@@ -84,11 +85,12 @@ const renderPdfs = (arr) => {
   if (arr.length == 0) {
     return
   }
-  setTimeout(x => {
+  renderPdf(datasTotal[0])
+  /* setTimeout(x => {
     renderPdf(datasTotal[0])
     datasTotal.splice(0, 1)
     renderPdfs(datasTotal)
-  }, 1000)
+  }, 1000) */
 }
 renderPdfs(datasTotal)
 router.get('/', function (req, res, next) {
@@ -99,58 +101,469 @@ router.get('/', function (req, res, next) {
 //生成PDF报表
 router.get('/pdf', function (req, res, next) {
 
+  renderPdfs(datasTotal)
+  res.send("1")
 });
 
 //抓取该页面
 router.get('/chart', function (req, res, next) {
+
+  //head
+  const titleRender = (name, list = []) => {
+    let html = '';
+    list = [{
+      name: "安全事件",
+      number: 100
+    }, {
+      name: "一般性网络恶意行",
+      number: 1001
+    }, {
+      name: "较重网络攻击场景",
+      number: 120
+    }, {
+      name: "严重疑似高级持续威胁",
+      number: 103
+    }]
+    if (list.length != 0) {
+      html += "<div class='list-head'>"
+      const color = ["#4990e1", "#87d9fa", "#ffc364", "#fe627a"]
+      list.forEach((x, i) => {
+        html += `
+          <div style="background:${color[i]}" class="while-c">
+            <div style="font-size:12px;line-height:24px;">${x.name}</div>
+            <div>
+              <span style="font-size:14px" >10058</span>
+              <span style="font-size:12px">起</span>
+            </div>
+          </div>
+        `
+      })
+      html += "</div>"
+    }
+    return `
+      <div> 
+        <h1 class="title">${name}</h1> 
+        ${html}
+      </div> 
+      `
+  }
+  //cSS.
+  const style = STYLE
+  const barHTML = (id = 0) => {
+    return {
+      dom: `
+      <svg id="bar${id}"></svg>
+      `,
+      id: `bar${id}`
+    }
+  }
+
   const dom = new JSDOM(`<!DOCTYPE html>
   <body>  
-  <h1>我是PDF2</h1>
-  <svg class="svg1"></svg>
-  
-  <br>
-  <h1>我是PDF3</h1>
-  <svg class="svg2"></svg>
-  
-  <br>
-  <h1>我是PDF4</h1>
-  <svg class="svg3"></svg> 
-  <br>
-  <h1>我是PDF4</h1>
-  <svg class="svg4"></svg>
-  <h1 style="position:absolute;bottom:0">我是中文，我不会乱码</h1>
+    ${style}
+    <div class="one">
+      ${titleRender('一、安全事件')}
+      <div>
+        <div>
+          <div class="minor-title">安全事件构成图：</div> 
+          <svg id="one-bar"></svg>
+        </div>
+        <div  class="border"></div>
+        <div class="flex-2">
+          <div>
+            <div class="minor-title">安全事件攻击源排名：</div> 
+            <svg id="one-two"></svg>
+          </div>
+          <div>
+            <div class="minor-title">本周被攻击最多的IP：</div> 
+            <svg id="one-three"></svg>
+          </div>
+        </div>
+      </div>
+      
+      
+    </div>
+    
   </body> 
-`);
+  `);
   // console.log(dom.window.document.querySelector("p").textContent);
-  var rectHeight = 25;
-  
-  var svg1 = d3.select(dom.window.document.querySelector(".svg1")).attr('width', 595).attr('height', 600);
-  var svg2 = d3.select(dom.window.document.querySelector(".svg2")).attr('width', 595).attr('height', 600);
-  var svg3 = d3.select(dom.window.document.querySelector(".svg3")).attr('width', 595).attr('height', 600);
-  var svg4 = d3.select(dom.window.document.querySelector(".svg4")).attr('width', 595).attr('height', 600);
-  var dataset = [250, 210, 170, 130, 90];
-  var dataset1 = [1, 500, 170, 230, 90, 333, 521];
- 
+  //主题宽度
+  const bodyWidth = 550;
+  var color = d3.scale.category20();
+  //第一版面饼状图 
+  const pieOneRender = (list = []) => {
+    list = [{
+      name: "恶意行为",
+      number: 19
+    }, {
+      name: "高级持续威胁",
+      number: 20
+    }, {
+      name: "攻击场景",
+      number: 50
+    }]
+    let height = 160;
+    var svg = d3.select(dom.window.document.querySelector("#one-bar")).attr("width", bodyWidth).attr("height", height)
+    //2.转换数据
+    var pie = d3.layout.pie().value(function (d) {
+      return d[1];
+    });
+    //1.确定初始数据
+    var dataset = [
+      ["恶意行为", 60.8],
+      ["高级持续威胁", 58.4],
+      ["攻击场景", 47.3]
+    ];
+    var piedata = pie(dataset);
+    var fontsize = 14;
 
-  function svgs(SVG) {
-    SVG.selectAll("rect")
-      .data(dataset1)
+    //外半径和内半径
+    var outerRadius = height / 2.8;
+    var innerRadius = 0;
+
+    //创建弧生成器
+    var arc = d3.svg.arc()
+      .innerRadius(innerRadius)
+      .outerRadius(outerRadius);
+
+
+
+    //添加对应数目的弧组，即<g>元素
+    var arcs = svg.append("g").selectAll("g")
+      .data(piedata) //绑定转换后的数据piedata
       .enter()
-      .append("rect")
-      .attr("x", 20)
-      .attr("y", function (d, i) {
-        return i * rectHeight;
+      .append("g")
+      .attr("transform", "translate(" + (bodyWidth / 2) + "," + (height / 2) + ")");
+
+    //绘制弧
+    arcs.append("path")
+      .attr("fill", function (d, i) {
+        return color(i); //设定弧的颜色
       })
-      .attr("width", function (d) {
-        return d;
+      .attr("d", function (d) {
+        return arc(d); //使用弧生成器
+      });
+    var leftList = svg.append("g").selectAll("g")
+      .data(piedata) //绑定转换后的数据piedata
+      .enter()
+      .append("g")
+      .attr("transform", function (d, i) {
+        return "translate(" + 40 + "," + (50 + (16 * i)) + ")"
+      });
+    leftList.append("rect")
+      .attr("width", 20)
+      .attr("height", 12)
+      .attr("rx", 4)
+      .attr("ry", 4)
+      .attr("fill", function (d, i) {
+        return color(i)
       })
-      .attr("height", rectHeight - 2)
-      .attr("fill", "steelblue");
+    leftList.append("text").text(function (d) {
+      return "11"
+    }).attr('y', 11).attr("x", 22).attr("class", "bar-text").text(function (d) {
+      return d.data[0];
+    })
+
+
+    /*  //绘制弧内的文字
+    arcs.append("text")
+      .attr("transform", function (d) {
+        var x = arc.centroid(d)[0] * 1.4; //文字的x坐标
+        var y = arc.centroid(d)[1] * 1.4; //文字的y坐标
+        return "translate(" + x + "," + y + ")";
+      })
+      .attr("text-anchor", "middle")
+      .style("font-size", fontsize)
+      .text(function (d) {
+        //计算市场份额的百分比
+        var percent = Number(d.value) / d3.sum(dataset, function (d) {
+          return d[1];
+        }) * 100;
+
+        //保留1位小数点，末尾加一个百分号返回
+        return percent.toFixed(1) + "%";
+      });
+
+ */
+    //绘制连接弧外文字的直线
+    arcs.append("line")
+      .style("stroke", "black")
+      .attr("x1", function (d) {
+        return arc.centroid(d)[0] * 2;
+      })
+      .attr("y1", function (d) {
+        return arc.centroid(d)[1] * 2;
+      })
+      .attr("x2", function (d) {
+        return arc.centroid(d)[0] * 2.2;
+      })
+      .attr("y2", function (d) {
+        return arc.centroid(d)[1] * 2.2;
+      });
+
+    //绘制连接弧外文字的直线
+    arcs.append("line")
+      .attr("fill", "#888")
+      .style("stroke", "black")
+      .each(function (d) {
+        d.textLine = {
+          x1: 0,
+          y1: 0,
+          x2: 0,
+          y2: 0
+        };
+      })
+      .attr("x1", function (d) {
+        d.textLine.x1 = arc.centroid(d)[0] * 2.2;
+        return d.textLine.x1;
+      })
+      .attr("y1", function (d) {
+        d.textLine.y1 = arc.centroid(d)[1] * 2.2;
+        return d.textLine.y1;
+      })
+      .attr("x2", function (d) {
+        // var strLen = getPixelLength(d.data[0], fontsize) * 1.5;
+        var strLen = 90;
+        var bx = arc.centroid(d)[0] * 2.2;
+        d.textLine.x2 = bx >= 0 ? bx + strLen : bx - strLen;
+        return d.textLine.x2;
+      })
+      .attr("y2", function (d) {
+        d.textLine.y2 = arc.centroid(d)[1] * 2.2;
+        return d.textLine.y2;
+      });
+
+    //绘制弧外文字
+    arcs.append("text")
+      .attr("fill", "#888")
+      .attr("transform", function (d) {
+        var x = 0;
+        var y = 0;
+        x = (d.textLine.x1 + d.textLine.x2) / 2;
+        y = d.textLine.y1;
+        y = y > 0 ? y + fontsize * 1.1 : y - fontsize * 0.4;
+        return "translate(" + x + "," + y + ")";
+      })
+      .style("text-anchor", "middle")
+      .style("font-size", fontsize)
+      .text(function (d) {
+        //计算市场份额的百分比
+        var percent = Number(d.value) / d3.sum(dataset, function (d) {
+          return d[1];
+        }) * 100;
+
+        //保留1位小数点，末尾加一个百分号返回
+        return percent.toFixed(1) + "%";
+      });
+
+
+
+
   }
-  svgs(svg1)
-  svgs(svg2)
-  svgs(svg3)
-  svgs(svg4)
+
+  //第一版面柱状图
+  const barOneRender = (list = []) => {
+    list = [{
+        name: "英国",
+        number: 100
+      },
+      {
+        name: "美国",
+        number: 80
+      },
+      {
+        name: "法国",
+        number: 85
+      },
+      {
+        name: "中国",
+        number: 125
+      },
+      {
+        name: "意大利",
+        number: 168
+      }, {
+        name: "日本",
+        number: 168
+      }, {
+        name: "日本",
+        number: 128
+      }, {
+        name: "日本",
+        number: 118
+      }, {
+        name: "日本",
+        number: 568
+      }, {
+        name: "日本",
+        number: 368
+      },
+    ]
+    let height = 260;
+    let width = bodyWidth / 2 - 20
+    var svg = d3.select(dom.window.document.querySelector("#one-two")).attr("width", width).attr("height", height)
+    let all_number = list.map(x => {
+      return x.number;
+    })
+    //求得最值和最小值
+    let num_max = d3.max(all_number)
+    let num_min = d3.min(all_number)
+    var padding = {
+      top: 0,
+      right: 30,
+      bottom: 80,
+      left: 30
+    };
+    //x轴宽度
+    var xAxisWidth = width - 30;
+
+    //y轴宽度
+    var yAxisWidth = height - padding.bottom;
+
+    //x轴比例尺
+    var xScale = d3.scale.ordinal()
+      .domain(d3.range(list.length))
+      .rangeRoundBands([0, xAxisWidth], 0.2);
+
+    //y轴比例尺
+    var yScale = d3.scale.linear()
+      .domain([0, num_max])
+      .range([0, yAxisWidth]);
+    var rect = svg.append("g").selectAll("rect")
+      .data(list) //绑定数据
+      .enter() //获取enter部分
+      .append("rect") //添加rect元素，使其与绑定数组的长度一致
+      .attr("fill", function (d, i) {
+        return color(i)
+      }) //设置颜色为steelblue
+      .attr("x", function (d, i) { //设置矩形的x坐标
+        return padding.left + xScale(i);
+      })
+      .attr("y", function (d) { //设置矩形的y坐标
+        return height - padding.bottom - yScale(d.number);
+      })
+      .attr("width", xScale.rangeBand()) //设置矩形的宽度
+      .attr("height", function (d) { //设置矩形的高度
+        return yScale(d.number);
+      })
+    var text = svg.append("g").selectAll("text")
+      .data(list) //绑定数据
+      .enter() //获取enter部分
+      .append("text") //添加text元素，使其与绑定数组的长度一致
+      //  .attr("fill", "white")
+      .attr("font-size", "14px")
+      .attr("text-anchor", "inherit")
+      .classed("tr-lb", true)
+      .attr("x", function (d, i) {
+        return padding.left + xScale(i);
+      })
+      .attr("y", function (d) {
+        return height - padding.bottom - 5;
+      })
+      .attr("dx", xScale.rangeBand() / 2)
+      .attr("dy", "1em")
+      .text(function (d) {
+        return d.name;
+      });
+    var commasFormatter = d3.format(",.0f")
+    var xAxis = d3.svg.axis()
+      .scale(xScale)
+      .tickFormat(function (d) {
+        // return list[d].name;
+        return ""
+      })
+      .orient("bottom")
+
+    yScale.range([yAxisWidth, 0]);
+
+    var yAxis = d3.svg.axis()
+      .scale(yScale)
+      .orient("left")
+
+    svg.append("g")
+      .attr("class", "tr-lb axis")
+      .attr('text-anchor', 'middle')
+      .attr("transform", "translate(" + padding.left + "," + (height - padding.bottom) + ")")
+      .call(xAxis)
+
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(" + padding.left + "," + (height - padding.bottom - yAxisWidth) + ")")
+      .call(yAxis);
+
+  }
+  //恒状图
+  const barHerRender = (list = []) => {
+    list = [{
+        name: "10.0.01",
+        number: 100
+      },
+      {
+        name: "美国",
+        number: 15
+      },
+      {
+        name: "10.0.016.15",
+        number: 85
+      },
+      {
+        name: "192.165.14",
+        number: 125
+      },
+      {
+        name: "192.165.14",
+        number: 122
+      },
+      {
+        name: "192.165.14",
+        number: 85
+      }
+    ]
+    let height = 260;
+    let width = bodyWidth / 2 - 20
+    var svg = d3.select(dom.window.document.querySelector("#one-three")).attr("width", width).attr("height", height)
+    let all_number = list.map(x => {
+      return x.number;
+    })
+    //求得最值和最小值
+    let num_max = d3.max(all_number)
+    let num_min = d3.min(all_number)
+    var padding = {
+      top: 30,
+      right: 30,
+      bottom: 30,
+      left: 30
+    };
+    //x轴宽度
+    var xAxisWidth = width - 30;
+
+    //y轴宽度
+    var yAxisWidth = height - padding.bottom;
+    var yScale = d3.scale.ordinal()
+      .domain(d3.range(list.length))
+      .rangeRoundBands([0, height - 30], 0.2);
+    //x轴比例尺
+    var xScale = d3.scale.linear()
+      .domain([0, num_max])
+      .range([0, xAxisWidth]);
+    //矩形
+    var rect = svg.append("g").selectAll("rect").data(list)
+      .enter().append("rect")
+      .attr("x", padding.left).attr("y", function (d, i) {
+        return padding.top + yScale(i)
+      }).attr("fill", function (d, i) {
+        return color(i)
+      }).attr("width", function (d, i) {
+        return xScale(d.number)
+      }).attr("height", 10)
+
+  }
+  //第一版面饼状图
+  pieOneRender()
+  //第一版面柱状图
+  barOneRender()
+  //第一版面恒状图
+  barHerRender()
   res.send(dom.window.document.body.innerHTML)
 });
 module.exports = router;
