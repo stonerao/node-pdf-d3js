@@ -103,8 +103,7 @@ router.get('/', function (req, res, next) {
   });
 });
 //生成PDF报表
-router.post('/pdf', function (req, res, next) {
-  
+router.post('/pdf', function (req, res, next) { 
   //允许跨域
   res.header("Access-Control-Allow-Origin", "*");
   res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
