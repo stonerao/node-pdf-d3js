@@ -14,7 +14,7 @@ var phantom = require('phantom');
 /* GET home page. */
 
 
-function renderPdf(name) {
+function renderPdf(name,func) {
   //开始执行
   phantom.create().then(function (ph) {
     //创建一个PDF
@@ -36,6 +36,7 @@ function renderPdf(name) {
         page.render(url).then(function () {
           //保存成功
           ph.exit();
+          func(url)
         });
       });
     });
@@ -81,18 +82,21 @@ const DateCycle = (time = new Date()) => {
 
 }
 var datasTotal = DateCycle(new Date())
-const renderPdfs = (arr) => {
+const renderPdfs = (arr,func) => {
   if (arr.length == 0) {
     return
   }
-  renderPdf(datasTotal[0])
+  renderPdf(datasTotal[0],function(data){
+    console.log(data)
+    func(data)
+  })
   /* setTimeout(x => {
     renderPdf(datasTotal[0])
     datasTotal.splice(0, 1)
     renderPdfs(datasTotal)
   }, 1000) */
 }
-renderPdfs(datasTotal)
+// renderPdfs(datasTotal)
 router.get('/', function (req, res, next) {
   res.render('index', {
     title: 'Express'
@@ -100,9 +104,18 @@ router.get('/', function (req, res, next) {
 });
 //生成PDF报表
 router.post('/pdf', function (req, res, next) {
-  // renderPdfs(datasTotal)
+  
+  //允许跨域
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+ 
   let body = req.body;
-  res.json(body)
+  renderPdfs(datasTotal,function(data){
+    res.sendFile(data)
+  })
+  // res.json(body)
 });
 
 //抓取该页面
