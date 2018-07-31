@@ -31,7 +31,7 @@ function renderPdf(name) {
         }); */
         //保存对应位置
         // var url = __dirname + '/' + (+new Date) + 'pdf.pdf'
-        var url = index + '/pdf/' + name + '.pdf'
+        var url = index + '/public/pdf/' + name + '.pdf'
         //开始渲染并且保存
         page.render(url).then(function () {
           //保存成功
@@ -110,8 +110,7 @@ router.get('/chart', function (req, res, next) {
 
   //head
   const titleRender = (name, list = []) => {
-    let html = '';
-
+    let html = ''; 
     if (list.length != 0) {
       html += "<div class='list-head'>"
       const color = ["#4990e1", "#87d9fa", "#ffc364", "#fe627a"]
