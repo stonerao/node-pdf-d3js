@@ -6,86 +6,34 @@
     hello
   </title>
   <script src="/javascripts/d3.v3.min.js"></script>
+  <script src="/javascripts/jquery-3.3.1.min.js"></script>
   <style>
     * {
       margin: 0;
       padding: 0;
     }
-    body{
-      width:600px;
-      margin:0 auto;
+
+    body {
+      width: 600px;
+      margin: 0 auto;
     }
   </style>
 </head>
 
 <body>
   <svg></svg>
-  <script>
-    //饼状图
-    var svg = d3.select("svg")
-    var width = 1000;
-    var height = 500;
-    svg.attr("width", width).attr("height", 1000)
-    /*  var dataset = [
-       ['小米', 60.8],
-       ['华为', 20.8],
-       ['联想', 30.8],
-       ['苹果', 40.8], 
-       ['三星2', 20.8],
-       ['三星3', 150.8], 
-     ]
-     //创建饼状图
-     var pie = d3.layout.pie().value(function (d) {
-       //设置值
-       return d[1]
-     })
-     var piedata = pie(dataset)
-     //设置外半径和内半径
-    
-     var outerRadius = width / 5
-     var innerRadius = 0;
-     var arc = d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius);
-     var color = d3.scale.category20()
-   
-  
-     var arcs = svg.selectAll("g").data(piedata).enter().append("g").attr("transform",
-       `translate(${width/2},${height/2})`)
-     arcs.append("path").attr("fill", function (d, i) {
-       return color(i)
-     }).attr("d", function (d) {
-       return arc(d)
-     })
-     arcs.append("line").attr("stroke", "#58a")
-       .attr(`x1`, function (d) {
-         return arc.centroid(d)[0] * 2
-       })
-       .attr(`y1`, function (d) {
-         return arc.centroid(d)[1] * 2
-       })
-       .attr(`x2`, function (d) {
-         return arc.centroid(d)[0] * 2.2
-       })
-       .attr(`y2`, function (d) {
-         return arc.centroid(d)[1] * 2.2
-       })
-     arcs.append("text").attr("transform", function (d) {
-       var x = arc.centroid(d)[0] * 2.4
-       var y = arc.centroid(d)[1] * 2.4
-       return `translate(${x},${y})`
-     }).attr('text-anchor', "middle").text(function (d) {
-       return d.data[0]
-     }) */
-    //创建一个生成正态分布的函数，其中平均值为170，标准差为10
-    var rand = d3.random.normal(120, 30);
-
-    //定义一个数组，用于保存正态分布生成的数值
-    var dataset = [];
-
-    //根据正态分布生成100个随机数，插入到数组dataset中
-    for (var i = 0; i < 5; i++) {
-      dataset.push(rand());
-    }
-    
+  <script> 
+    $.ajax({
+      type: 'POST',
+      url: "http://10.0.0.23:3000/pdf",
+      data: {
+        a: 1
+      },
+      success: function (data) {
+        console.log(data)
+      },
+      dataType: 'json'
+    });
   </script>
 </body>
 

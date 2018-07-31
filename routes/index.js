@@ -21,14 +21,14 @@ function renderPdf(name) {
     ph.createPage().then(function (page) {
       //打开需要读取页面
       page.open("http://localhost:3000/chart").then(function (status) {
-        /* page.property('viewportSize', {
-          width: 595,
-          height: 500
-        }); */
-        //设置页面为A4大小
-        page.property('paperSize', {
-          format: 'A4',
+        page.property('viewportSize', {
+          width: 750,
+          // height: 500
         });
+        //设置页面为A4大小
+        /* page.property('paperSize', {
+          format: 'A4',
+        }); */
         //保存对应位置
         // var url = __dirname + '/' + (+new Date) + 'pdf.pdf'
         var url = index + '/pdf/' + name + '.pdf'
@@ -99,10 +99,10 @@ router.get('/', function (req, res, next) {
   });
 });
 //生成PDF报表
-router.get('/pdf', function (req, res, next) {
-
-  renderPdfs(datasTotal)
-  res.send("1")
+router.post('/pdf', function (req, res, next) {
+  // renderPdfs(datasTotal)
+  let body = req.body;
+  res.json(body)
 });
 
 //抓取该页面
@@ -111,19 +111,7 @@ router.get('/chart', function (req, res, next) {
   //head
   const titleRender = (name, list = []) => {
     let html = '';
-    list = [{
-      name: "安全事件",
-      number: 100
-    }, {
-      name: "一般性网络恶意行",
-      number: 1001
-    }, {
-      name: "较重网络攻击场景",
-      number: 120
-    }, {
-      name: "严重疑似高级持续威胁",
-      number: 103
-    }]
+
     if (list.length != 0) {
       html += "<div class='list-head'>"
       const color = ["#4990e1", "#87d9fa", "#ffc364", "#fe627a"]
@@ -147,6 +135,52 @@ router.get('/chart', function (req, res, next) {
       </div> 
       `
   }
+  const titleRender_1 = (name, list = []) => {
+    let html = '';
+
+    if (list.length != 0) {
+      html += "<div class='list-head--2'>"
+      const color =["#4990e1", "#87d9fa", "#d6a9ff", "#ffc364","#fa627a","#aeaeae"] 
+      list.forEach((x, i) => {
+        html += `
+          <div style="background:${color[i]}" class="while-c">
+            <div style="font-size:12px;line-height:24px;">${x.name}</div>
+            <div>
+              <span style="font-size:14px">10058</span>
+              <span style="font-size:12px">起</span>
+            </div>
+          </div>
+        `
+      })
+      html += "</div>"
+    }
+    return `
+      <div> 
+        <h1 class="title">${name}</h1> 
+        ${html}
+      </div> 
+      `
+  }
+  const four_head=()=>{
+    return `
+      <div class="four-head">
+        <div class="four-head-grade">
+          <div class="four-head-grade-1">
+            优
+          </div>
+          <div class="four-head-text">
+            安全评估等级
+          </div>
+        </div>
+        <div class="four-head-list">
+          <div>本周</div>
+          <div>安全指数最高<span class="color-cs">9分（2018.07.16）</span></div>
+          <div>最低<span class="color-hs">6分（2018.7.17）</span></div>
+          <div>平均分<span class="color-ls">8分</span></div>
+        </div>
+      </div>
+    `
+  }
   //cSS.
   const style = STYLE
   const barHTML = (id = 0) => {
@@ -157,13 +191,57 @@ router.get('/chart', function (req, res, next) {
       id: `bar${id}`
     }
   }
-
+  let oneList = [{
+    name: "资产告警共",
+    number: 100
+  }, {
+    name: "一般性网络恶意行",
+    number: 1001
+  }, {
+    name: "较重网络攻击场景",
+    number: 120
+  }, {
+    name: "严重疑似高级持续威胁",
+    number: 103
+  }]
+  let twoList = [{
+    name: "安全事件",
+    number: 100
+  }, {
+    name: "一般告警",
+    number: 1001
+  }, {
+    name: "较重告警",
+    number: 120
+  }, {
+    name: "严重告警",
+    number: 103
+  }]
+  let threeList = [{
+    name: "漏洞共",
+    number: 100
+  }, {
+    name: "格式化文档漏洞",
+    number: 1001
+  }, {
+    name: "操纵系统漏洞",
+    number: 120
+  }, {
+    name: "Web漏洞",
+    number: 103
+  }, {
+    name: "数据库漏洞",
+    number: 103
+  }, {
+    name: "其他类型",
+    number: 103
+  }]
   const dom = new JSDOM(`<!DOCTYPE html>
   <body>  
     ${style}
     <div class="one">
-      ${titleRender('一、安全事件')}
-      <div>
+      ${titleRender('一、安全事件',oneList)}
+      <div class="border-isolation">
         <div>
           <div class="minor-title">安全事件构成图：</div> 
           <svg id="one-bar"></svg>
@@ -179,9 +257,63 @@ router.get('/chart', function (req, res, next) {
             <svg id="one-three"></svg>
           </div>
         </div>
+        <div  class="border"></div>
+        <div>
+          <div class="minor-title">安全事件数量日线走势与安全事件同：</div> 
+          <svg id="one-four"></svg>
+        </div>
+      </div> 
+    </div>
+    <div class="two">
+      ${titleRender('二、资产告警',twoList)}
+      <div class="border-isolation">
+        <div>
+          <div class="minor-title">资产告警构成图：</div> 
+          <svg id="two-bar"></svg>
+        </div>
+        <div  class="border"></div>
+        <div class="flex-2">
+          <div>
+            <div class="minor-title">本周告警最多的IP：</div> 
+            <svg id="two-two"></svg>
+          </div>
+          <div>
+            <div class="minor-title">资产告警事件数量日线走势图：</div> 
+            <svg id="two-three"></svg>
+          </div>
+        </div>
       </div>
-      
-      
+    </div>
+    <div class="three">
+      ${titleRender_1('三、漏洞检测',threeList)}
+      <div class="border-isolation">
+        <div>
+          <div class="minor-title">安全事件构成图：</div> 
+          <svg id="three-bar"></svg>
+        </div>
+        <div  class="border"></div>
+        <div class="flex-2">
+          <div>
+            <div class="minor-title">漏洞最多的IP：</div> 
+            <svg id="three-two"></svg>
+          </div> 
+        </div>
+        <div  class="border"></div>
+        <div>
+          <div class="minor-title">漏洞数量同比</div> 
+          <svg id="three-three"></svg>
+        </div>
+      </div>
+    <div class="four">
+      ${titleRender_1('四、量化评估',[])}
+      ${four_head()}
+      <div> 
+        <div  class="border"></div>
+        <div>
+          <div class="minor-title">资产告警事件数量日线走势图</div> 
+          <svg id="four-three"></svg>
+        </div>
+      </div>
     </div>
     
   </body> 
@@ -191,7 +323,7 @@ router.get('/chart', function (req, res, next) {
   const bodyWidth = 550;
   var color = d3.scale.category20();
   //第一版面饼状图 
-  const pieOneRender = (list = []) => {
+  const pieOneRender = (list = [], id) => {
     list = [{
       name: "恶意行为",
       number: 19
@@ -203,7 +335,7 @@ router.get('/chart', function (req, res, next) {
       number: 50
     }]
     let height = 160;
-    var svg = d3.select(dom.window.document.querySelector("#one-bar")).attr("width", bodyWidth).attr("height", height)
+    var svg = d3.select(dom.window.document.querySelector(id)).attr("width", bodyWidth).attr("height", height)
     //2.转换数据
     var pie = d3.layout.pie().value(function (d) {
       return d[1];
@@ -399,7 +531,7 @@ router.get('/chart', function (req, res, next) {
         number: 368
       },
     ]
-    let height = 260;
+    let height = 210;
     let width = bodyWidth / 2 - 20
     var svg = d3.select(dom.window.document.querySelector("#one-two")).attr("width", width).attr("height", height)
     let all_number = list.map(x => {
@@ -453,6 +585,7 @@ router.get('/chart', function (req, res, next) {
       //  .attr("fill", "white")
       .attr("font-size", "14px")
       .attr("text-anchor", "inherit")
+      .attr("textLength", 40)
       .classed("tr-lb", true)
       .attr("x", function (d, i) {
         return padding.left + xScale(i);
@@ -478,6 +611,7 @@ router.get('/chart', function (req, res, next) {
 
     var yAxis = d3.svg.axis()
       .scale(yScale)
+
       .orient("left")
 
     svg.append("g")
@@ -492,15 +626,11 @@ router.get('/chart', function (req, res, next) {
       .call(yAxis);
 
   }
-  //恒状图
-  const barHerRender = (list = []) => {
+  //横状图
+  const barHerRender = (list = [], id) => {
     list = [{
         name: "10.0.01",
         number: 100
-      },
-      {
-        name: "美国",
-        number: 15
       },
       {
         name: "10.0.016.15",
@@ -513,15 +643,22 @@ router.get('/chart', function (req, res, next) {
       {
         name: "192.165.14",
         number: 122
+      }, {
+        name: "192.165.14",
+        number: 152
       },
       {
         name: "192.165.14",
         number: 85
+      },
+      {
+        name: "192.165.14",
+        number: 185
       }
     ]
-    let height = 260;
+    let height = 210;
     let width = bodyWidth / 2 - 20
-    var svg = d3.select(dom.window.document.querySelector("#one-three")).attr("width", width).attr("height", height)
+    var svg = d3.select(dom.window.document.querySelector(id)).attr("width", width).attr("height", height)
     let all_number = list.map(x => {
       return x.number;
     })
@@ -532,16 +669,17 @@ router.get('/chart', function (req, res, next) {
       top: 30,
       right: 30,
       bottom: 30,
-      left: 30
+      left: 70
     };
     //x轴宽度
     var xAxisWidth = width - 30;
 
     //y轴宽度
-    var yAxisWidth = height - padding.bottom;
+    var yAxisWidth = height - padding.left;
     var yScale = d3.scale.ordinal()
       .domain(d3.range(list.length))
-      .rangeRoundBands([0, height - 30], 0.2);
+      .rangeRoundBands([0, height - 80], 0.2);
+
     //x轴比例尺
     var xScale = d3.scale.linear()
       .domain([0, num_max])
@@ -549,21 +687,191 @@ router.get('/chart', function (req, res, next) {
     //矩形
     var rect = svg.append("g").selectAll("rect").data(list)
       .enter().append("rect")
-      .attr("x", padding.left).attr("y", function (d, i) {
-        return padding.top + yScale(i)
+      .attr("x", padding.left)
+      .attr("y", function (d, i) {
+        return yScale(i)
       }).attr("fill", function (d, i) {
         return color(i)
       }).attr("width", function (d, i) {
         return xScale(d.number)
-      }).attr("height", 10)
+      }).attr("height", yScale.rangeBand())
+    //横标记
+    var xAxis = d3.svg.axis()
+      .scale(xScale)
+      .tickFormat(function (d, i) {
+        // return list[i].name;
+        return d
+      })
+      .orient("bottom")
+    svg.append("g")
+      .attr("class", "axis")
+      .attr('text-anchor', 'middle')
+      .attr("transform", "translate(" + padding.left + "," + (height - 80) + ")")
+      .call(xAxis)
 
+    // yScale.range([yAxisWidth-10, 0]);
+
+    var yAxis = d3.svg.axis()
+      .scale(yScale).tickFormat(function (d, i) {
+        // return list[i].name;
+        return list[i].name
+      })
+      .orient("left")
+
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(" + padding.left + "," + (0) + ")")
+      .call(yAxis);
+  }
+  const lineRender = (list = [], id, width = bodyWidth) => {
+    let height = 150;
+    /* list = [{
+        name: "one",
+        data: [120, 30, 10, 205]
+      },
+      {
+        name: "two",
+        data: [12, 35, 233, 205]
+      }
+    ]
+    let height = 105;
+    let width = bodyWidth;
+    var svg = d3.select(dom.window.document.querySelector(id)).attr("width", width).attr("height", height)
+    //求得最大值
+    let all_arr = [];
+    list.forEach(x => {
+      x.data.forEach(y => {
+        all_arr.forEach(y)
+      })
+    })
+    //x轴宽度
+    var xAxisWidth = width - 30;
+    //y轴宽度
+    var yAxisWidth = height - padding.bottom;
+      //x轴比例尺
+    var xScale = d3.select.linear().domain(d3.range(list.length))
+      .rangeRoundBands([0, xAxisWidth], 0.2);
+      //y轴比例尺
+    var yScale = d3.scale.linear()
+    .domain([0, num_max])
+    .range([0, yAxisWidth]);
+
+     */
+    var svg = d3.select(dom.window.document.querySelector(id)).attr("width", width).attr("height", height)
+    var dataset = [{
+      country: "china",
+      gdp: [
+        [2000, 11920],
+        [2001, 1920],
+        [2002, 21920],
+        [2003, 14920],
+        [2004, 25920],
+      ]
+    }, {
+      country: "japan",
+      gdp: [
+        [2000, 9920],
+        [2001, 12920],
+        [2002, 13920],
+        [2003, 31920],
+        [2004, 12920],
+      ]
+    }]
+
+    //外边框
+    var padding = {
+      top: 20,
+      right: 20,
+      bottom: 20,
+      left: 80
+    }
+    var max = 0;
+    //求得最大值
+    for (var i = 0; i < dataset.length; i++) {
+      var currGdp = d3.max(dataset[i].gdp, function (d) {
+        return d[1]
+      })
+      if (currGdp > max) {
+        max = currGdp
+      }
+    }
+    //x
+    var xScale = d3.scale.linear().domain([2000, 2004]).range([0, width - padding.left - padding.right])
+    var yScale = d3.scale.linear().domain([0, max * 1.1]).range([height - padding.top - padding.bottom, 0])
+    //直线生成器
+    var linePath = d3.svg.line().x(function (d) {
+      return xScale(d[0])
+    }).y(function (d) {
+      return yScale(d[1])
+    })
+    svg.append("g").selectAll("path").data(dataset)
+      .enter()
+      .append("path")
+      .attr("transform", `translate(${padding.left},${padding.top})`)
+      .attr("d", function (d) {
+        return linePath(d.gdp)
+      })
+      .attr("fill", "none")
+      .attr("stroke-width", 2)
+      .attr("stroke", function (d, i) {
+        return color(i)
+      })
+    dataset.forEach((x, i) => {
+      svg.append("g").selectAll("circle")
+        .data(x.gdp)
+        .enter()
+        .append("circle")
+        .attr("r", 2)
+        .attr("cx", (d, i) => xScale(d[0]))
+        .attr("cy", d => yScale(d[1]))
+        .attr("transform", `translate(${padding.left},${padding.top})`)
+        .append("text")
+        .attr("fill", "while")
+        .attr("stroke-width", 1)
+        .attr("stroke", function (d) {
+          return color(i)
+        })
+    })
+
+    var xAxis = d3.svg.axis().scale(xScale).ticks(5).tickFormat(d3.format("d")).orient("bottom")
+    var yAxis = d3.svg.axis().scale(yScale).orient("left")
+    svg.append("g").attr("class", "axis")
+      .attr("transform", `translate(${padding.left},${height-padding.bottom})`)
+      .call(xAxis)
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(${padding.left},${padding.top})`)
+      .call(yAxis)
   }
   //第一版面饼状图
-  pieOneRender()
+  pieOneRender([], "#one-bar")
   //第一版面柱状图
-  barOneRender()
+  barOneRender([], "#one-two")
   //第一版面恒状图
-  barHerRender()
+  barHerRender([], "#one-three")
+  //第一版折线图
+  lineRender([], "#one-four")
+
+  // 第二版
+  //饼状图
+  pieOneRender([], "#two-bar")
+  //横状图
+  barHerRender([], "#two-two")
+  //折线图
+  lineRender([], "#two-three", bodyWidth / 2)
+
+  //第三版
+  //饼状图
+  pieOneRender([], "#three-bar")
+  //横状图
+  barHerRender([],"#three-two")
+  //折线图
+  lineRender([], "#three-three")
+  
+  
+  //第四版
+  lineRender([], "#four-three")
+
   res.send(dom.window.document.body.innerHTML)
 });
 module.exports = router;
