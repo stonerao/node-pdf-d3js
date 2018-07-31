@@ -7,14 +7,16 @@ const {
 } = jsdom;
 const STYLE = require("./style.js")
 var {
-  index
+  index,
+  opp
 } = require("../path.js")
 
 var phantom = require('phantom');
 /* GET home page. */
 
+var l_obj = {}
 
-function renderPdf(name,func) {
+function renderPdf(name, func) {
   //开始执行
   phantom.create().then(function (ph) {
     //创建一个PDF
@@ -82,11 +84,12 @@ const DateCycle = (time = new Date()) => {
 
 }
 var datasTotal = DateCycle(new Date())
-const renderPdfs = (arr,func) => {
+const renderPdfs = (arr, func) => {
   if (arr.length == 0) {
     return
   }
-  renderPdf(datasTotal[0],function(data){
+  //生成PDF
+  renderPdf(datasTotal[0], function (data) {
     console.log(data)
     func(data)
   })
@@ -103,26 +106,124 @@ router.get('/', function (req, res, next) {
   });
 });
 //生成PDF报表
-router.post('/pdf', function (req, res, next) { 
+router.post('/pdf', function (req, res, next) {
+  //保存当前数据
+
   //允许跨域
   res.header("Access-Control-Allow-Origin", "*");
   res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
   res.header("Access-Control-Allow-Headers", "X-Requested-With");
   res.header('Access-Control-Allow-Headers', 'Content-Type');
- 
+
   let body = req.body;
-  renderPdfs(datasTotal,function(data){
-    res.sendFile(data)
+  l_obj = body
+  renderPdfs(datasTotal, function (data) {
+    // res.sendFile(data)
   })
-  // res.json(body)
+
+  res.json(body)
+
 });
 
 //抓取该页面
 router.get('/chart', function (req, res, next) {
+  //解析数据
+  // l_obj
+  //安全事件
+  if (!l_obj) {
+    return
+  }
+  var data_attack = opp['attack']
+  // var data_attack = l_obj['attack']
+  //信息
+  var data_head = [{
+    name: "资产告警共",
+    number: data_attack.total
+  }, {
+    name: "一般性网络恶意行",
+    number: data_attack.normal
+  }, {
+    name: "较重网络攻击场景",
+    number: data_attack.normal
+  }, {
+    name: "严重疑似高级持续威胁",
+    number: data_attack.high
+  }]
+  //安全事件攻击源
+  var attack_source = data_attack['top_src_area'].map(x => {
+    return {
+      name: x.name,
+      number: x.count
+    }
+  })
+  //被攻击最多的IP排名
+  var top_tar_ip = data_attack['top_tar_ip'].map(x => {
+    return {
+      name: x.name,
+      number: x.count
+    }
+  })
+  //双折线图
+  var attack_current = data_attack['current'].map(x => {
+    return [x.name, x.value]
+  })
+  var attack_last = data_attack['last'].map(x => {
+    return [x.name, x.value]
+  })
+  var attack_line = [{
+    country: "current",
+    gdp: attack_current
+  }, {
+    country: "current",
+    gdp: attack_last
+  }]
 
+
+  //资产告警
+  var data_alarm = opp['asset_alarm']
+  var alarm_head = [{
+    name: "资产告警共",
+    number: data_alarm.total
+  }, {
+    name: "一般性网络恶意行",
+    number: data_alarm.normal
+  }, {
+    name: "较重网络攻击场景",
+    number: data_alarm.normal
+  }, {
+    name: "严重疑似高级持续威胁",
+    number: data_alarm.high
+  }]
+
+  //双折线图
+  var alarm_current = data_alarm['current'].map(x => {
+    return [x.name, x.value]
+  })
+
+  var alarm_line = [{
+    country: "current",
+    gdp: alarm_current
+  }]
+  var alarm_top_ip = data_alarm['top_ip'].map(x => {
+    return {
+      name: x.name,
+      number: x.count
+    }
+  })
+  //综合
+  //资产告警
+  var data_index = opp['index']
+  //双折线图
+  var index_current = data_index['current'].map(x => {
+    return [x.name, x.value]
+  })
+  var index_line = [{
+    country: "current",
+    gdp: index_current
+  }]
   //head
   const titleRender = (name, list = []) => {
-    let html = ''; 
+    let html = '';
     if (list.length != 0) {
       html += "<div class='list-head'>"
       const color = ["#4990e1", "#87d9fa", "#ffc364", "#fe627a"]
@@ -131,7 +232,7 @@ router.get('/chart', function (req, res, next) {
           <div style="background:${color[i]}" class="while-c">
             <div style="font-size:12px;line-height:24px;">${x.name}</div>
             <div>
-              <span style="font-size:14px" >10058</span>
+              <span style="font-size:14px" >${x.number}</span>
               <span style="font-size:12px">起</span>
             </div>
           </div>
@@ -151,7 +252,7 @@ router.get('/chart', function (req, res, next) {
 
     if (list.length != 0) {
       html += "<div class='list-head--2'>"
-      const color =["#4990e1", "#87d9fa", "#d6a9ff", "#ffc364","#fa627a","#aeaeae"] 
+      const color = ["#4990e1", "#87d9fa", "#d6a9ff", "#ffc364", "#fa627a", "#aeaeae"]
       list.forEach((x, i) => {
         html += `
           <div style="background:${color[i]}" class="while-c">
@@ -172,7 +273,7 @@ router.get('/chart', function (req, res, next) {
       </div> 
       `
   }
-  const four_head=()=>{
+  const four_head = () => {
     return `
       <div class="four-head">
         <div class="four-head-grade">
@@ -248,10 +349,10 @@ router.get('/chart', function (req, res, next) {
     number: 103
   }]
   const dom = new JSDOM(`<!DOCTYPE html>
-  <body>  
+  <body>   
     ${style}
     <div class="one">
-      ${titleRender('一、安全事件',oneList)}
+      ${titleRender('一、安全事件',data_head)}
       <div class="border-isolation">
         <div>
           <div class="minor-title">安全事件构成图：</div> 
@@ -276,7 +377,7 @@ router.get('/chart', function (req, res, next) {
       </div> 
     </div>
     <div class="two">
-      ${titleRender('二、资产告警',twoList)}
+      ${titleRender('二、资产告警',alarm_head)}
       <div class="border-isolation">
         <div>
           <div class="minor-title">资产告警构成图：</div> 
@@ -506,42 +607,7 @@ router.get('/chart', function (req, res, next) {
 
   //第一版面柱状图
   const barOneRender = (list = []) => {
-    list = [{
-        name: "英国",
-        number: 100
-      },
-      {
-        name: "美国",
-        number: 80
-      },
-      {
-        name: "法国",
-        number: 85
-      },
-      {
-        name: "中国",
-        number: 125
-      },
-      {
-        name: "意大利",
-        number: 168
-      }, {
-        name: "日本",
-        number: 168
-      }, {
-        name: "日本",
-        number: 128
-      }, {
-        name: "日本",
-        number: 118
-      }, {
-        name: "日本",
-        number: 568
-      }, {
-        name: "日本",
-        number: 368
-      },
-    ]
+
     let height = 210;
     let width = bodyWidth / 2 - 20
     var svg = d3.select(dom.window.document.querySelector("#one-two")).attr("width", width).attr("height", height)
@@ -555,7 +621,7 @@ router.get('/chart', function (req, res, next) {
       top: 0,
       right: 30,
       bottom: 80,
-      left: 30
+      left: 40
     };
     //x轴宽度
     var xAxisWidth = width - 30;
@@ -639,34 +705,7 @@ router.get('/chart', function (req, res, next) {
   }
   //横状图
   const barHerRender = (list = [], id) => {
-    list = [{
-        name: "10.0.01",
-        number: 100
-      },
-      {
-        name: "10.0.016.15",
-        number: 85
-      },
-      {
-        name: "192.165.14",
-        number: 125
-      },
-      {
-        name: "192.165.14",
-        number: 122
-      }, {
-        name: "192.165.14",
-        number: 152
-      },
-      {
-        name: "192.165.14",
-        number: 85
-      },
-      {
-        name: "192.165.14",
-        number: 185
-      }
-    ]
+
     let height = 210;
     let width = bodyWidth / 2 - 20
     var svg = d3.select(dom.window.document.querySelector(id)).attr("width", width).attr("height", height)
@@ -769,26 +808,8 @@ router.get('/chart', function (req, res, next) {
 
      */
     var svg = d3.select(dom.window.document.querySelector(id)).attr("width", width).attr("height", height)
-    var dataset = [{
-      country: "china",
-      gdp: [
-        [2000, 11920],
-        [2001, 1920],
-        [2002, 21920],
-        [2003, 14920],
-        [2004, 25920],
-      ]
-    }, {
-      country: "japan",
-      gdp: [
-        [2000, 9920],
-        [2001, 12920],
-        [2002, 13920],
-        [2003, 31920],
-        [2004, 12920],
-      ]
-    }]
-
+    var dataset = list
+    var lengthMax = d3.max(dataset.map(x => x.gdp.length))
     //外边框
     var padding = {
       top: 20,
@@ -807,11 +828,11 @@ router.get('/chart', function (req, res, next) {
       }
     }
     //x
-    var xScale = d3.scale.linear().domain([2000, 2004]).range([0, width - padding.left - padding.right])
+    var xScale = d3.scale.linear().domain([0, lengthMax - 1]).range([0, width - padding.left - padding.right])
     var yScale = d3.scale.linear().domain([0, max * 1.1]).range([height - padding.top - padding.bottom, 0])
     //直线生成器
-    var linePath = d3.svg.line().x(function (d) {
-      return xScale(d[0])
+    var linePath = d3.svg.line().x(function (d, i) {
+      return xScale(i)
     }).y(function (d) {
       return yScale(d[1])
     })
@@ -857,31 +878,31 @@ router.get('/chart', function (req, res, next) {
   //第一版面饼状图
   pieOneRender([], "#one-bar")
   //第一版面柱状图
-  barOneRender([], "#one-two")
+  barOneRender(attack_source, "#one-two")
   //第一版面恒状图
-  barHerRender([], "#one-three")
+  barHerRender(top_tar_ip, "#one-three")
   //第一版折线图
-  lineRender([], "#one-four")
+  lineRender(attack_line, "#one-four")
 
   // 第二版
   //饼状图
   pieOneRender([], "#two-bar")
   //横状图
-  barHerRender([], "#two-two")
+  barHerRender(alarm_top_ip, "#two-two")
   //折线图
-  lineRender([], "#two-three", bodyWidth / 2)
+  lineRender(alarm_line, "#two-three", bodyWidth / 2)
 
   //第三版
   //饼状图
   pieOneRender([], "#three-bar")
   //横状图
-  barHerRender([],"#three-two")
+  barHerRender([], "#three-two")
   //折线图
   lineRender([], "#three-three")
-  
-  
+
+
   //第四版
-  lineRender([], "#four-three")
+  lineRender(index_line, "#four-three")
 
   res.send(dom.window.document.body.innerHTML)
 });
