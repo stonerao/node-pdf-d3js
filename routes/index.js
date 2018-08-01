@@ -134,10 +134,10 @@ router.post('/pdf', function (req, res, next) {
   let body = req.body;
   l_obj = body
   renderPdfs(datasTotal, function (data) {
-    // res.sendFile(data)
+    res.sendFile(data)
   })
 
-  res.json(body)
+  // res.json(body)
 
 });
 
@@ -149,7 +149,7 @@ router.get('/chart', function (req, res, next) {
   if (!l_obj) {
     return
   }
-  var data_attack = opp['attack']
+  var data_attack = l_obj['attack']
   // var data_attack = l_obj['attack']
   //信息
   var data_head = [{
@@ -207,7 +207,7 @@ router.get('/chart', function (req, res, next) {
 
 
   //资产告警
-  var data_alarm = opp['asset_alarm']
+  var data_alarm = l_obj['asset_alarm']
   var alarm_head = [{
     name: "资产告警共",
     number: data_alarm.total
@@ -249,7 +249,7 @@ router.get('/chart', function (req, res, next) {
   })
   //综合
   //资产告警
-  var data_index = opp['index']
+  var data_index = l_obj['index']
   //双折线图
   var index_current = data_index['current'].map(x => {
     return [x.name, x.value]
