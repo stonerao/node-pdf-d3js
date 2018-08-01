@@ -99,7 +99,7 @@ const renderPdfs = (arr, func) => {
     renderPdfs(datasTotal)
   }, 1000) */
 }
-// renderPdfs(datasTotal)
+renderPdfs(datasTotal)
 router.get('/', function (req, res, next) {
   res.render('index', {
     title: 'Express'
