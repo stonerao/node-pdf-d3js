@@ -15,7 +15,7 @@ var phantom = require('phantom');
 /* GET home page. */
 
 var l_obj = {}
-
+var pdfHTML = ''
 function renderPdf(name, func) {
   //开始执行
   phantom.create().then(function (ph) {
@@ -105,6 +105,22 @@ router.get('/', function (req, res, next) {
     title: 'Express'
   });
 });
+router.post('/renderHtml', function (req, res, next) {
+  //允许跨域
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  let body = req.body;
+  if(!pdfHTML){
+    res.json({
+      code:-1,
+      msg:"请先生成PDF"
+    })
+    return 
+  }
+  res.send(pdfHTML) 
+});
 //生成PDF报表
 router.post('/pdf', function (req, res, next) {
   //保存当前数据
@@ -144,9 +160,20 @@ router.get('/chart', function (req, res, next) {
     number: data_attack.normal
   }, {
     name: "较重网络攻击场景",
-    number: data_attack.normal
+    number: data_attack.medium
   }, {
     name: "严重疑似高级持续威胁",
+    number: data_attack.high
+  }]
+  //饼状图数据
+  var pie_attatck = [{
+    name: "恶意行为",
+    number: data_attack.normal
+  }, {
+    name: "攻击场景",
+    number: data_attack.medium
+  }, {
+    name: "高级持续威胁",
     number: data_attack.high
   }]
   //安全事件攻击源
@@ -185,16 +212,26 @@ router.get('/chart', function (req, res, next) {
     name: "资产告警共",
     number: data_alarm.total
   }, {
-    name: "一般性网络恶意行",
+    name: "一般告警",
     number: data_alarm.normal
   }, {
-    name: "较重网络攻击场景",
-    number: data_alarm.normal
+    name: "较重告警",
+    number: data_alarm.medium
   }, {
-    name: "严重疑似高级持续威胁",
+    name: "严重告警",
     number: data_alarm.high
   }]
-
+  //饼状图信息
+  var pie_alarm = [{
+    name: "一般告警",
+    number: data_alarm.normal
+  }, {
+    name: "较重告警",
+    number: data_alarm.medium
+  }, {
+    name: "严重告警",
+    number: data_alarm.high
+  }]
   //双折线图
   var alarm_current = data_alarm['current'].map(x => {
     return [x.name, x.value]
@@ -217,6 +254,17 @@ router.get('/chart', function (req, res, next) {
   var index_current = data_index['current'].map(x => {
     return [x.name, x.value]
   })
+  var index_total = data_index['current'].map(x=>x.value)
+  //最高分
+  var index_max_num = d3.max(index_total)
+  //最低分
+  var index_min_num = d3.min(index_total)
+  //平均分
+
+  var index_total_num =  index_total.reduce(function(prev, curr){
+      return prev + curr;
+  });
+  var inde_p_num = (index_total_num/index_total.length).toFixed(2)
   var index_line = [{
     country: "current",
     gdp: index_current
@@ -273,12 +321,17 @@ router.get('/chart', function (req, res, next) {
       </div> 
       `
   }
-  const four_head = () => {
+  const four_head = (max,min,ping) => {
+    /**
+     * @param max 最大值
+     * @param min 最小值
+     * @param ping 平均值
+     */
     return `
       <div class="four-head">
         <div class="four-head-grade">
           <div class="four-head-grade-1">
-            优
+            ${ping>=8?'优'?ping<8||ping>=6:'量':'危'}
           </div>
           <div class="four-head-text">
             安全评估等级
@@ -286,9 +339,9 @@ router.get('/chart', function (req, res, next) {
         </div>
         <div class="four-head-list">
           <div>本周</div>
-          <div>安全指数最高<span class="color-cs">9分（2018.07.16）</span></div>
-          <div>最低<span class="color-hs">6分（2018.7.17）</span></div>
-          <div>平均分<span class="color-ls">8分</span></div>
+          <div>安全指数最高<span class="color-cs">${max}分（2018.07.16）</span></div>
+          <div>最低<span class="color-hs">${min}分（2018.7.17）</span></div>
+          <div>平均分<span class="color-ls">${ping}分</span></div>
         </div>
       </div>
     `
@@ -359,16 +412,17 @@ router.get('/chart', function (req, res, next) {
           <svg id="one-bar"></svg>
         </div>
         <div  class="border"></div>
-        <div class="flex-2">
-          <div>
-            <div class="minor-title">安全事件攻击源排名：</div> 
-            <svg id="one-two"></svg>
-          </div>
-          <div>
-            <div class="minor-title">本周被攻击最多的IP：</div> 
-            <svg id="one-three"></svg>
-          </div>
-        </div>
+      
+         <div  class="m-t-10">
+           <div class="minor-title">安全事件攻击源排名：</div> 
+           <svg id="one-two"></svg>
+         </div>
+         <div  class="border"></div>
+         <div  class="m-t-10">
+           <div class="minor-title">本周被攻击最多的IP：</div> 
+           <svg id="one-three"></svg>
+         </div>
+       
         <div  class="border"></div>
         <div>
           <div class="minor-title">安全事件数量日线走势与安全事件同：</div> 
@@ -384,16 +438,17 @@ router.get('/chart', function (req, res, next) {
           <svg id="two-bar"></svg>
         </div>
         <div  class="border"></div>
-        <div class="flex-2">
-          <div>
+        
+          <div class="m-t-10">
             <div class="minor-title">本周告警最多的IP：</div> 
             <svg id="two-two"></svg>
           </div>
-          <div>
+          <div  class="border"></div>
+          <div class="m-t-10">
             <div class="minor-title">资产告警事件数量日线走势图：</div> 
             <svg id="two-three"></svg>
           </div>
-        </div>
+        
       </div>
     </div>
     <div class="three">
@@ -418,7 +473,7 @@ router.get('/chart', function (req, res, next) {
       </div>
     <div class="four">
       ${titleRender_1('四、量化评估',[])}
-      ${four_head()}
+      ${four_head(index_max_num,index_min_num,inde_p_num)}
       <div> 
         <div  class="border"></div>
         <div>
@@ -435,17 +490,8 @@ router.get('/chart', function (req, res, next) {
   const bodyWidth = 550;
   var color = d3.scale.category20();
   //第一版面饼状图 
-  const pieOneRender = (list = [], id) => {
-    list = [{
-      name: "恶意行为",
-      number: 19
-    }, {
-      name: "高级持续威胁",
-      number: 20
-    }, {
-      name: "攻击场景",
-      number: 50
-    }]
+  const pieOneRender = (list = [], id) => { 
+     
     let height = 160;
     var svg = d3.select(dom.window.document.querySelector(id)).attr("width", bodyWidth).attr("height", height)
     //2.转换数据
@@ -453,11 +499,10 @@ router.get('/chart', function (req, res, next) {
       return d[1];
     });
     //1.确定初始数据
-    var dataset = [
-      ["恶意行为", 60.8],
-      ["高级持续威胁", 58.4],
-      ["攻击场景", 47.3]
-    ];
+    var dataset = list.map(x => {
+      return [x.name, x.number]
+    })
+    
     var piedata = pie(dataset);
     var fontsize = 14;
 
@@ -507,28 +552,7 @@ router.get('/chart', function (req, res, next) {
     }).attr('y', 11).attr("x", 22).attr("class", "bar-text").text(function (d) {
       return d.data[0];
     })
-
-
-    /*  //绘制弧内的文字
-    arcs.append("text")
-      .attr("transform", function (d) {
-        var x = arc.centroid(d)[0] * 1.4; //文字的x坐标
-        var y = arc.centroid(d)[1] * 1.4; //文字的y坐标
-        return "translate(" + x + "," + y + ")";
-      })
-      .attr("text-anchor", "middle")
-      .style("font-size", fontsize)
-      .text(function (d) {
-        //计算市场份额的百分比
-        var percent = Number(d.value) / d3.sum(dataset, function (d) {
-          return d[1];
-        }) * 100;
-
-        //保留1位小数点，末尾加一个百分号返回
-        return percent.toFixed(1) + "%";
-      });
-
- */
+ 
     //绘制连接弧外文字的直线
     arcs.append("line")
       .style("stroke", "black")
@@ -594,10 +618,13 @@ router.get('/chart', function (req, res, next) {
         //计算市场份额的百分比
         var percent = Number(d.value) / d3.sum(dataset, function (d) {
           return d[1];
-        }) * 100;
-
-        //保留1位小数点，末尾加一个百分号返回
-        return percent.toFixed(1) + "%";
+        }) * 100; 
+        //保留1位小数点，末尾加一个百分号返回 
+        if(percent){
+          return percent.toFixed(1) + "%";
+        }
+        return "空"
+        
       });
 
 
@@ -609,7 +636,7 @@ router.get('/chart', function (req, res, next) {
   const barOneRender = (list = []) => {
 
     let height = 210;
-    let width = bodyWidth / 2 - 20
+    let width = bodyWidth  -20
     var svg = d3.select(dom.window.document.querySelector("#one-two")).attr("width", width).attr("height", height)
     let all_number = list.map(x => {
       return x.number;
@@ -624,7 +651,7 @@ router.get('/chart', function (req, res, next) {
       left: 40
     };
     //x轴宽度
-    var xAxisWidth = width - 30;
+    var xAxisWidth = width -padding.left;
 
     //y轴宽度
     var yAxisWidth = height - padding.bottom;
@@ -643,7 +670,8 @@ router.get('/chart', function (req, res, next) {
       .enter() //获取enter部分
       .append("rect") //添加rect元素，使其与绑定数组的长度一致
       .attr("fill", function (d, i) {
-        return color(i)
+        // return color(i)
+        return "#8AC0fe"
       }) //设置颜色为steelblue
       .attr("x", function (d, i) { //设置矩形的x坐标
         return padding.left + xScale(i);
@@ -662,7 +690,7 @@ router.get('/chart', function (req, res, next) {
       //  .attr("fill", "white")
       .attr("font-size", "14px")
       .attr("text-anchor", "inherit")
-      .attr("textLength", 40)
+      .attr("textLength", 45)
       .classed("tr-lb", true)
       .attr("x", function (d, i) {
         return padding.left + xScale(i);
@@ -707,7 +735,7 @@ router.get('/chart', function (req, res, next) {
   const barHerRender = (list = [], id) => {
 
     let height = 210;
-    let width = bodyWidth / 2 - 20
+    let width = bodyWidth  - 30
     var svg = d3.select(dom.window.document.querySelector(id)).attr("width", width).attr("height", height)
     let all_number = list.map(x => {
       return x.number;
@@ -722,7 +750,7 @@ router.get('/chart', function (req, res, next) {
       left: 70
     };
     //x轴宽度
-    var xAxisWidth = width - 30;
+    var xAxisWidth = width - padding.left;
 
     //y轴宽度
     var yAxisWidth = height - padding.left;
@@ -741,7 +769,8 @@ router.get('/chart', function (req, res, next) {
       .attr("y", function (d, i) {
         return yScale(i)
       }).attr("fill", function (d, i) {
-        return color(i)
+        // return color(i)
+        return "#eeb693"
       }).attr("width", function (d, i) {
         return xScale(d.number)
       }).attr("height", yScale.rangeBand())
@@ -756,9 +785,10 @@ router.get('/chart', function (req, res, next) {
     svg.append("g")
       .attr("class", "axis")
       .attr('text-anchor', 'middle')
+      
       .attr("transform", "translate(" + padding.left + "," + (height - 80) + ")")
       .call(xAxis)
-
+     
     // yScale.range([yAxisWidth-10, 0]);
 
     var yAxis = d3.svg.axis()
@@ -769,10 +799,12 @@ router.get('/chart', function (req, res, next) {
       .orient("left")
 
     svg.append("g")
-      .attr("class", "axis")
+      .attr("class", "axis yaxis") 
       .attr("transform", "translate(" + padding.left + "," + (0) + ")")
       .call(yAxis);
+      svg.selectAll(".yaxis").selectAll("text").attr('textLength',60)
   }
+
   const lineRender = (list = [], id, width = bodyWidth) => {
     let height = 150;
     /* list = [{
@@ -876,7 +908,7 @@ router.get('/chart', function (req, res, next) {
       .call(yAxis)
   }
   //第一版面饼状图
-  pieOneRender([], "#one-bar")
+  pieOneRender(pie_attatck, "#one-bar")
   //第一版面柱状图
   barOneRender(attack_source, "#one-two")
   //第一版面恒状图
@@ -886,11 +918,11 @@ router.get('/chart', function (req, res, next) {
 
   // 第二版
   //饼状图
-  pieOneRender([], "#two-bar")
+  pieOneRender(pie_alarm, "#two-bar")
   //横状图
   barHerRender(alarm_top_ip, "#two-two")
   //折线图
-  lineRender(alarm_line, "#two-three", bodyWidth / 2)
+  lineRender(alarm_line, "#two-three", bodyWidth )
 
   //第三版
   //饼状图
@@ -903,7 +935,7 @@ router.get('/chart', function (req, res, next) {
 
   //第四版
   lineRender(index_line, "#four-three")
-
+  pdfHTML = dom.window.document.body.innerHTML
   res.send(dom.window.document.body.innerHTML)
 });
 module.exports = router;
