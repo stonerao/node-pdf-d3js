@@ -22,7 +22,7 @@ function renderPdf(name, func) {
     //创建一个PDF
     ph.createPage().then(function (page) {
       //打开需要读取页面
-      page.open("http://localhost:3000/chart").then(function (status) {
+      page.open("/chart").then(function (status) {
         page.property('viewportSize', {
           width: 750,
           // height: 500
