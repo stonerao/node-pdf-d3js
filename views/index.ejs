@@ -248,11 +248,21 @@
       url: "/pdf",
       data: JSON.stringify(obj),
       success: function (data) {
-
+        
       },
       dataType: 'json',
       contentType: "application/json; charset=UTF-8"
     });
+    setTimeout(x=>{
+      $.ajax({
+          type: 'POST',
+          url: "/renderHtml",
+          success: function (data) {
+
+          },
+          dataType: 'json',
+        });
+    },2000)
   </script>
 </body>
 <style>
