@@ -100,7 +100,7 @@ const renderPdfs = (arr, func) => {
     renderPdfs(datasTotal)
   }, 1000) */
 }
-// renderPdfs(datasTotal)
+renderPdfs(datasTotal)
 router.get('/', function (req, res, next) {
   res.render('index', {
     title: 'Express'
@@ -934,8 +934,7 @@ router.get('/chart', function (req, res, next) {
 
   //第四版
   lineRender(index_line, "#four-three")
-  pdfHTML = dom.window.document.body.innerHTML
-  console.log(dom.window.document.body.innerHTML)
+  pdfHTML = dom.window.document.body.innerHTML 
   res.send(dom.window.document.body.innerHTML)
 });
 module.exports = router;
