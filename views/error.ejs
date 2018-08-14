@@ -1,3 +1,361 @@
-<h1><%= message %></h1>
-<h2><%= error.status %></h2>
-<pre><%= error.stack %></pre>
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>
+    <%= title%>
+  </title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 600px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div> 
+      <div id="aaa"></div>
+      <div class="one border-isolation">
+        <div>
+          <h1 class="title">一、安全事件</h1>
+          <div class="list-head">
+            <div style="background:#4990e1" class="while-c">
+              <div style="font-size:12px;line-height:24px;">资产告警共</div>
+              <div>
+                <span class="font-snum-p" id="attackObj_total"><%= p %></span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+            <div style="background:#87d9fa" class="while-c">
+              <div style="font-size:12px;line-height:24px;">一般性网络恶意行</div>
+              <div>
+                <span class="font-snum-p" id="attackObj_normal"></span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+            <div style="background:#ffc364" class="while-c">
+              <div style="font-size:12px;line-height:24px;">较重网络攻击场景</div>
+              <div>
+                <span class="font-snum-p" id="attackObj_medium"></span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+            <div style="background:#fe627a" class="while-c">
+              <div style="font-size:12px;line-height:24px;">严重疑似高级持续威胁</div>
+              <div>
+                <span class="font-snum-p" id="attackObj_high"></span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="">
+          <div>
+            <div class="minor-title">安全事件构成图：</div>
+            <div id="chart-attact-pie" class="chart-pie"></div>
+          </div>
+          <div class="border"></div>
+
+          <div class="m-t-10">
+            <div class="minor-title">安全事件攻击源排名：</div>
+            <div id="chart-attact-bar" class="chart-pie"></div>
+          </div>
+          <div class="border"></div>
+          <div class="m-t-10">
+            <div class="minor-title">本周被攻击最多的IP：</div>
+            <div id="chart-attact-bar_h" class="chart-pie"></div>
+          </div>
+
+          <div class="border"></div>
+          <div>
+            <div class="minor-title">安全事件数量日线走势与安全事件同：</div>
+            <div id="chart-attact-line" class="chart-pie"></div>
+          </div>
+        </div>
+
+      </div>
+      <div class="two border-isolation">
+
+        <div>
+          <h1 class="title">二、资产告警</h1>
+          <div class="list-head">
+            <div style="background:#4990e1" class="while-c">
+              <div style="font-size:12px;line-height:24px;">资产告警共</div>
+              <div>
+                <span class="font-snum-p">{{attackObj.total}}</span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+
+            <div style="background:#87d9fa" class="while-c">
+              <div style="font-size:12px;line-height:24px;">一般告警</div>
+              <div>
+                <span class="font-snum-p">{{attackObj.normal}}</span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+
+            <div style="background:#ffc364" class="while-c">
+              <div style="font-size:12px;line-height:24px;">较重告警</div>
+              <div>
+                <span class="font-snum-p">{{attackObj.medium}}</span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+
+            <div style="background:#fe627a" class="while-c">
+              <div style="font-size:12px;line-height:24px;">严重告警</div>
+              <div>
+                <span class="font-snum-p">{{attackObj.high}}</span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div>
+            <div class="minor-title">资产告警构成图：</div>
+            <div id="chart-alarm-pie" class="chart-pie"></div>
+          </div>
+          <div class="border"></div>
+
+          <div class="m-t-10 m-t-10">
+            <div class="minor-title">本周告警最多的IP：</div>
+            <div id="chart-alarm-bar_h" class="chart-pie"></div>
+          </div>
+          <div class="border"></div>
+          <div class="m-t-10">
+            <div class="minor-title">资产告警事件数量日线走势图：</div>
+            <div id="chart-alarm-line" class="chart-pie"></div>
+          </div>
+
+        </div>
+      </div>
+      <div class="three border-isolation">
+
+        <div>
+          <h1 class="title">三、漏洞检测1</h1>
+          <div class="list-head--2">
+            <div :style="{'background':renderColor(i)}" class="while-c" v-for="(item,i) in vulAarr" :key="i">
+              <div style="font-size:12px;line-height:24px;">{{item.name}}</div>
+              <div>
+                <span class="font-snum-p">{{item.value}}</span>
+                <span style="font-size:12px">起</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div>
+          <div class="m-t-10">
+            <div class="minor-title">安全事件构成图：</div>
+            <div id="chart-vulnerability-pie" class="chart-pie"></div>
+          </div>
+          <div class="border"></div>
+          <div class="m-t-10">
+            <div class="minor-title">漏洞最多的IP：</div>
+            <div id="chart-vulnerability-bar_h" class="chart-pie"></div>
+          </div>
+
+          <div class="border"></div>
+          <div class="m-t-10">
+            <div class="minor-title">漏洞数量同比</div>
+            <div id="chart-vulnerability-line" class="chart-pie"></div>
+          </div>
+        </div>
+
+
+      </div>
+      <div class="four">
+
+        <div>
+          <h1 class="title">四、量化评估</h1>
+
+        </div>
+
+        <div class="four-head">
+          <div class="four-head-grade">
+            <div class="four-head-grade-1">
+              {{index.ping>=8?'优':index.ping>=6?'良':'危'}}
+            </div>
+            <div class="four-head-text">
+              安全评估等级
+            </div>
+          </div>
+          <div class="four-head-list">
+            <div>本周</div>
+            <div>安全指数最高
+              <span class="color-cs">{{index.max.toFixed(2)}}分（{{dateRender(meta.start)}}）</span>
+            </div>
+            <div>最低
+              <span class="color-hs">{{index.min.toFixed(2)}}分（{{dateRender(meta.end)}}）</span>
+            </div>
+            <div>平均分
+              <span class="color-ls">{{index.ping.toFixed(2)}}分</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="border"></div>
+          <div class="m-t-10">
+            <div class="minor-title">资产告警事件数量日线走势图</div>
+            <div id="chart-index-line" class="chart-pie"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+  <script src="/javascripts/jquery-3.3.1.min.js"></script>
+  <script src="/javascripts/echarts.js"></script>
+  <script src="/javascripts/chart.js"></script>
+  <script type="text/javascript">
+    var data = '<%= data %>';
+    var params = JSON.parse(data)
+    //安全事件
+    const attack = params.attack;
+    var attackObjPie = [{
+        name: "恶意行为",
+        value: attack.normal
+      },
+      {
+        name: "攻击场景",
+        value: attack.medium
+      },
+      {
+        name: "高级持续威胁",
+        value: attack.high
+      }
+    ];
+    $str("#attackObj_total", addNumber([attack.normal, attack.medium, attack.high]))
+    $str("#attackObj_normal", attack.normal)
+    $str("#attackObj_medium", attack.medium)
+    $str("#attackObj_high", attack.high)
+    //chart
+    renderPie("chart-attact-pie", attackObjPie);
+
+    var top_src_area = attack.top_src_area.map(x => {
+      return {
+        name: x.name,
+        value: x.count
+      };
+    });
+    renderBar("chart-attact-bar", top_src_area);
+    var top_tar_ip = attack.top_tar_ip.map(x => {
+      return {
+        name: x.name,
+        value: x.count
+      };
+    });
+    renderBarHeng("chart-attact-bar_h", top_tar_ip);
+    //本周
+    var attack_current = attack.current;
+    //上周
+    var attack_last = attack.last;
+    var attack_line = [{
+        name: "current",
+        data: attack_current
+      },
+      {
+        name: "last",
+        data: attack_last
+      }
+    ];
+    renderLine("chart-attact-line", attack_line, params.meta);
+
+    var alarm = params.asset_alarm;
+    var alarmObjPie = [{
+        name: "恶意行为",
+        value: alarm.normal
+      },
+      {
+        name: "攻击场景",
+        value: alarm.medium
+      },
+      {
+        name: "高级持续威胁",
+        value: alarm.high
+      }
+    ];
+    renderPie("chart-alarm-pie", alarmObjPie);
+    var alarm_ip = alarm.top_ip.map(x => {
+      return {
+        name: x.name,
+        value: x.count
+      };
+    });
+    renderBarHeng("chart-alarm-bar_h", alarm_ip);
+    //本周
+    var alarm_current = alarm.current;
+    var alarm_line = [{
+      name: "current",
+      data: alarm_current
+    }];
+    renderLine("chart-alarm-line", alarm_line, params.meta);
+
+    //本周
+    var index = params.index;
+
+    var index_current = index.current;
+    var indexAll = index_current.map(x => x.value);
+    var max = Math.max.apply(null, indexAll);
+    var min = Math.min.apply(null, indexAll);
+    var index_he = 0;
+    indexAll.forEach(x => {
+      index_he += parseInt(x);
+    });
+    var ping = index_he / indexAll.length;
+    var index_line = [{
+      name: "current",
+      data: index_current
+    }];
+    renderLine("chart-index-line", index_line, params.meta);
+
+
+    //漏洞检测
+    var vulnerability = params.vulnerability;
+    var vulNumber = 0;
+    vulnerability.family_stats.forEach(x => {
+      if (parseInt(x.value) != NaN) {
+        vulNumber += parseInt(x.value);
+      }
+    });
+    var vulAarr = [];
+    vulAarr.push({
+        name: "漏洞共",
+        value: vulNumber
+      },
+      ...vulnerability.family_stats
+    );
+    renderPie("chart-vulnerability-pie", vulAarr);
+
+    renderBarHeng("chart-vulnerability-bar_h", vulnerability.ip_stats);
+    //本周
+    var vulnerability_current = vulnerability.current;
+    //上周
+    var vulnerability_last = vulnerability.last;
+    var vulnerability_line = [{
+        name: "current",
+        data: vulnerability_current
+      },
+      {
+        name: "last",
+        data: vulnerability_last
+      }
+    ];
+    renderLine("chart-vulnerability-line", vulnerability_line, params.meta);
+  </script>
+  
+  <link rel="stylesheet" href="/stylesheets/chart.css">
+</body>
+
+</html>
